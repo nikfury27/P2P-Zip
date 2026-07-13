@@ -12,6 +12,7 @@ interface UseWebRTCOptions {
 export function useWebRTC({ role, roomCode, sendSignal, onDataChannel }: UseWebRTCOptions) {
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const dcRef = useRef<RTCDataChannel | null>(null);
+  const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
   const [rtcState, setRtcState] = useState<RtcState>("idle");
 
   const targetRole: Role = role === "sender" ? "receiver" : "sender";
@@ -21,6 +22,7 @@ export function useWebRTC({ role, roomCode, sendSignal, onDataChannel }: UseWebR
     dcRef.current = null;
     pcRef.current?.close();
     pcRef.current = null;
+    pendingCandidatesRef.current = [];
   }, []);
 
   /** Create peer connection and set up ICE + state tracking */
@@ -49,6 +51,22 @@ export function useWebRTC({ role, roomCode, sendSignal, onDataChannel }: UseWebR
 
     return pc;
   }, [cleanup, roomCode, sendSignal, targetRole]);
+
+  const processPendingCandidates = useCallback(async () => {
+    const pc = pcRef.current;
+    if (!pc || !pc.remoteDescription) return;
+
+    const candidates = [...pendingCandidatesRef.current];
+    pendingCandidatesRef.current = [];
+
+    for (const candidate of candidates) {
+      try {
+        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch (err) {
+        console.error("[webrtc] Error adding queued ICE candidate:", err);
+      }
+    }
+  }, []);
 
   /** Sender: create offer and data channel */
   const startAsOfferer = useCallback(async () => {
@@ -81,6 +99,8 @@ export function useWebRTC({ role, roomCode, sendSignal, onDataChannel }: UseWebR
       };
 
       await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp }));
+      await processPendingCandidates();
+
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
 
@@ -89,7 +109,7 @@ export function useWebRTC({ role, roomCode, sendSignal, onDataChannel }: UseWebR
         sdp: answer.sdp,
       });
     },
-    [createPeerConnection, onDataChannel, roomCode, sendSignal, targetRole]
+    [createPeerConnection, onDataChannel, roomCode, sendSignal, targetRole, processPendingCandidates]
   );
 
   /** Handle incoming answer (sender side) */
@@ -97,16 +117,21 @@ export function useWebRTC({ role, roomCode, sendSignal, onDataChannel }: UseWebR
     const pc = pcRef.current;
     if (!pc) return;
     await pc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp }));
-  }, []);
+    await processPendingCandidates();
+  }, [processPendingCandidates]);
 
   /** Handle incoming ICE candidate */
   const handleIceCandidate = useCallback(async (candidate: RTCIceCandidateInit) => {
     const pc = pcRef.current;
     if (!pc) return;
-    try {
-      await pc.addIceCandidate(new RTCIceCandidate(candidate));
-    } catch {
-      // Ignore ICE errors for candidates arriving before remote description
+    if (pc.remoteDescription && pc.remoteDescription.type) {
+      try {
+        await pc.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch (err) {
+        console.error("[webrtc] Error adding ICE candidate:", err);
+      }
+    } else {
+      pendingCandidatesRef.current.push(candidate);
     }
   }, []);
 

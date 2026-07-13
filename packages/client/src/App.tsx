@@ -46,6 +46,10 @@ export default function App() {
     (dc: RTCDataChannel) => {
       activeDcRef.current = dc;
 
+      if (dc.readyState === "open") {
+        setRtcState("connected");
+      }
+
       dc.onopen = () => {
         setRtcState("connected");
       };

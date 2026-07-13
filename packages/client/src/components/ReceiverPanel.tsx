@@ -98,8 +98,14 @@ export function ReceiverPanel({
               disabled={picking}
               className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-on-secondary font-mono-label text-[13px] uppercase tracking-wider font-semibold py-4 rounded-xl hover:brightness-110 transition-all flex justify-center items-center gap-3 relative z-10 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
             >
-              <span className="material-symbols-outlined text-[20px]">save_alt</span>
-              {picking ? "Choosing location…" : "Choose Save Location & Start"}
+              <span className="material-symbols-outlined text-[20px]">
+                {typeof window !== "undefined" && "showSaveFilePicker" in window ? "save_alt" : "download"}
+              </span>
+              {picking
+                ? "Choosing location…"
+                : typeof window !== "undefined" && "showSaveFilePicker" in window
+                ? "Choose Save Location & Start"
+                : "Accept File & Start Download"}
             </button>
           )}
 
