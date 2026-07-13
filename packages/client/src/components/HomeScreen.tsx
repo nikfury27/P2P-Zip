@@ -14,9 +14,7 @@ export function HomeScreen({
   onCreateRoom,
   onJoinRoom,
   initialCode,
-  initialRole,
   loading,
-  error,
 }: HomeScreenProps) {
   const [joinCode, setJoinCode] = useState(initialCode);
 
@@ -26,83 +24,64 @@ export function HomeScreen({
     onJoinRoom(code);
   };
 
-  // Auto-join if URL has room + role=receiver
-  // (handled in App.tsx, but we show the join UI pre-filled)
-
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-8">
-        {/* Logo / Title */}
-        <div className="text-center space-y-2">
-          <div className="text-5xl font-bold tracking-tight">
-            P2P<span className="text-neutral-500">zip</span>
+    <div className="grid gap-6 transition-all duration-300 block" id="view-home">
+      {/* Send Card */}
+      <button
+        disabled={loading}
+        className="w-full backdrop-blur-xl bg-surface-container-low/40 border border-white/10 rounded-2xl flex flex-col items-start text-left group hover:scale-[1.01] hover:bg-surface-container-low/60 hover:border-white/20 transition-all duration-300 p-8 shadow-lg disabled:opacity-50"
+        onClick={onCreateRoom}
+      >
+        <div className="flex justify-between items-start w-full mb-6">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border border-white/5 flex items-center justify-center text-primary group-hover:from-indigo-500/30 group-hover:to-violet-500/30 transition-colors">
+            <span className="material-symbols-outlined text-[24px]">upload_file</span>
           </div>
-          <p className="text-neutral-500 text-sm">
-            Fast peer-to-peer .zip transfer. No uploads. No accounts.
+          <span className="font-mono-label text-[10px] px-2.5 py-1 bg-surface-container-highest/50 border border-white/10 rounded-md text-primary tracking-wider uppercase">
+            Direct WebRTC Stream
+          </span>
+        </div>
+        <div>
+          <h2 className="font-headline-sm text-headline-sm text-on-surface mb-2 font-medium">
+            {loading ? "Creating Room..." : "Send a File"}
+          </h2>
+          <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+            Generate a secure room code to share files directly from your browser. No size limits.
           </p>
         </div>
+      </button>
 
-        {/* Create Room */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-4">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-neutral-400">
-            Send a file
-          </h2>
-          <p className="text-xs text-neutral-500">
-            Create a room and share the code with the receiver.
-          </p>
-          <button
-            id="create-room-btn"
-            onClick={onCreateRoom}
-            disabled={loading}
-            className="w-full py-3 bg-white text-black font-semibold rounded-xl hover:bg-neutral-200 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? "Creating…" : "Create Room"}
-          </button>
+      {/* Receive Card */}
+      <div className="w-full backdrop-blur-xl bg-surface-container-low/40 border border-white/10 rounded-2xl flex flex-col items-start relative overflow-hidden group p-8 shadow-lg">
+        <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+        <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-6 relative z-10">
+          <span className="material-symbols-outlined text-[24px]">download_for_offline</span>
         </div>
-
-        {/* Join Room */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-4">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-neutral-400">
-            Receive a file
+        <div className="w-full relative z-10">
+          <h2 className="font-headline-sm text-headline-sm text-on-surface mb-4 font-medium">
+            Receive a File
           </h2>
-          <p className="text-xs text-neutral-500">
-            Enter the room code shared by the sender.
-          </p>
-          <div className="flex gap-2">
+          <div className="flex w-full gap-3 items-stretch">
             <input
               id="join-code-input"
-              type="text"
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
               onKeyDown={(e) => e.key === "Enter" && handleJoin()}
-              placeholder="ROOM CODE"
-              maxLength={10}
-              className="flex-1 bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm font-mono text-center tracking-widest text-white placeholder-neutral-600 outline-none focus:border-neutral-500 transition-colors uppercase"
+              placeholder="Enter Room Code"
+              maxLength={8}
+              type="text"
+              disabled={loading}
+              className="flex-grow bg-surface-container-lowest/80 border border-white/10 rounded-xl px-5 py-3.5 font-mono-data text-mono-data text-on-surface focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30 placeholder:text-on-surface-variant/50 transition-all uppercase tracking-widest text-[15px] disabled:opacity-50"
             />
             <button
               id="join-room-btn"
               onClick={handleJoin}
               disabled={loading || !joinCode.trim()}
-              className="px-6 py-3 bg-white text-black font-semibold rounded-xl hover:bg-neutral-200 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-gradient-to-r from-emerald-500 to-teal-500 text-on-secondary px-6 py-3.5 rounded-xl font-mono-label text-mono-label uppercase hover:brightness-110 transition-all flex items-center justify-center shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
             >
-              Join
+              <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
             </button>
           </div>
         </div>
-
-        {/* Error */}
-        {error && (
-          <div className="bg-red-900/20 border border-red-800/50 rounded-2xl p-4 text-center">
-            <div className="text-red-400 text-sm">{error}</div>
-          </div>
-        )}
-
-        {/* Footer */}
-        <p className="text-center text-neutral-600 text-xs">
-          Files transfer directly between browsers via WebRTC.
-          <br />
-          Nothing is uploaded to any server.
-        </p>
       </div>
     </div>
   );

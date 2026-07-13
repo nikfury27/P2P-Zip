@@ -1,29 +1,53 @@
 import type { RtcState } from "../types";
 
-const STATE_CONFIG: Record<RtcState, { label: string; color: string }> = {
-  idle: { label: "Idle", color: "bg-neutral-700 text-neutral-300" },
-  waiting: { label: "Waiting", color: "bg-yellow-900/60 text-yellow-300" },
-  connecting: { label: "Connecting", color: "bg-blue-900/60 text-blue-300" },
-  connected: { label: "Connected", color: "bg-green-900/60 text-green-300" },
-  failed: { label: "Failed", color: "bg-red-900/60 text-red-300" },
-  disconnected: { label: "Disconnected", color: "bg-red-900/60 text-red-300" },
-  completed: { label: "Completed", color: "bg-emerald-900/60 text-emerald-300" },
+const STATE_CONFIG: Record<
+  RtcState,
+  { label: string; container: string; dot: string }
+> = {
+  idle: {
+    label: "Idle",
+    container: "bg-surface-container-highest/50 border border-white/10 text-on-surface-variant",
+    dot: "bg-on-surface-variant",
+  },
+  waiting: {
+    label: "Waiting",
+    container: "bg-amber-500/10 border border-amber-500/25 text-amber-500",
+    dot: "bg-amber-500 animate-pulse",
+  },
+  connecting: {
+    label: "Connecting",
+    container: "bg-primary/10 border border-primary/25 text-primary",
+    dot: "bg-primary animate-pulse",
+  },
+  connected: {
+    label: "Connected",
+    container: "bg-emerald-500/10 border border-emerald-500/25 text-emerald-400",
+    dot: "bg-emerald-400",
+  },
+  failed: {
+    label: "Failed",
+    container: "bg-error/10 border border-error/25 text-error",
+    dot: "bg-error",
+  },
+  disconnected: {
+    label: "Disconnected",
+    container: "bg-error/10 border border-error/25 text-error",
+    dot: "bg-error",
+  },
+  completed: {
+    label: "Completed",
+    container: "bg-emerald-500/10 border border-emerald-500/25 text-emerald-400",
+    dot: "bg-emerald-400",
+  },
 };
 
 export function StatusBadge({ state }: { state: RtcState }) {
   const cfg = STATE_CONFIG[state];
   return (
-    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${cfg.color}`}>
-      <span
-        className={`w-1.5 h-1.5 rounded-full ${
-          state === "connecting" ? "bg-blue-400 animate-pulse" :
-          state === "connected" ? "bg-green-400" :
-          state === "failed" || state === "disconnected" ? "bg-red-400" :
-          state === "completed" ? "bg-emerald-400" :
-          state === "waiting" ? "bg-yellow-400 animate-pulse" :
-          "bg-neutral-400"
-        }`}
-      />
+    <span
+      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-mono-label text-[11px] uppercase tracking-wider ${cfg.container}`}
+    >
+      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
       {cfg.label}
     </span>
   );

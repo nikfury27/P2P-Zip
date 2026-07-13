@@ -233,84 +233,138 @@ export default function App() {
 
   // ── Render ──
 
-  if (!inRoom && !loading) {
-    return (
-      <HomeScreen
-        onCreateRoom={handleCreateRoom}
-        onJoinRoom={handleJoinRoom}
-        initialCode={urlRoom}
-        initialRole={urlRole}
-        loading={loading}
-        error={appError}
-      />
-    );
-  }
-
   const combinedError = appError || transfer.error;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <button
-            onClick={handleBackToHome}
-            className="text-neutral-500 hover:text-white text-xs transition-colors"
-          >
-            ← Back
-          </button>
-          <div className="text-sm font-bold tracking-tight">
-            P2P<span className="text-neutral-500">zip</span>
-          </div>
-          <div className="text-xs text-neutral-600 font-mono uppercase">
-            {role}
+    <div className="min-h-screen flex flex-col font-body-md overflow-x-hidden bg-background text-on-background selection:bg-primary/30">
+      {/* Top Status Bar (Only if connecting or disconnected) */}
+      {!ws.connected && inRoom && (
+        <div className="w-full flex justify-center pt-6 z-50 animate-fade-up">
+          <div className="backdrop-blur-md px-5 py-2 rounded-full flex items-center gap-4 border border-white/10 bg-surface-container-highest/50 text-primary shadow-[0_4px_24px_-8px_rgba(0,0,0,0.5)]">
+            <span className="material-symbols-outlined text-[16px]">wifi_tethering</span>
+            <span className="font-mono-label text-mono-label tracking-[0.1em] text-on-surface-variant">
+              Connecting to signaling server...
+            </span>
+            <div className="flex gap-1.5 ml-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-primary/80 animate-pulse"></div>
+              <div className="w-1.5 h-1.5 rounded-full bg-primary/80 animate-pulse" style={{ animationDelay: "150ms" }}></div>
+              <div className="w-1.5 h-1.5 rounded-full bg-primary/80 animate-pulse" style={{ animationDelay: "300ms" }}></div>
+            </div>
           </div>
         </div>
+      )}
 
-        {/* WebSocket status */}
-        {!ws.connected && inRoom && (
-          <div className="bg-yellow-900/20 border border-yellow-800/50 rounded-2xl p-3 text-center">
-            <div className="text-yellow-400 text-xs">Connecting to server…</div>
+      {/* Main Content Canvas */}
+      <main className="flex-grow flex items-center justify-center p-gutter relative z-10 w-full max-w-container-max mx-auto min-h-[80vh]">
+        {/* App Container */}
+        <div className="w-full max-w-[500px] animate-fade-up flex flex-col gap-10">
+          {/* Logo Header */}
+          <div className="flex flex-col items-center justify-center gap-4">
+            <div className="w-16 h-16 rounded-2xl backdrop-blur-xl bg-surface-container-highest/30 border border-white/10 flex items-center justify-center text-primary shadow-[0_8px_32px_-12px_rgba(192,193,255,0.2)]">
+              <span className="material-symbols-outlined text-[32px]">sync_alt</span>
+            </div>
+            <div className="text-center">
+              <h1 className="font-headline-md text-headline-md text-on-surface mb-1 font-semibold tracking-tight">
+                P2P-Zip
+              </h1>
+              <p className="font-mono-label text-mono-label text-on-surface-variant uppercase tracking-[0.15em] text-[10px]">
+                End-to-end encrypted transfer
+              </p>
+            </div>
           </div>
-        )}
 
-        {/* Role-specific panel */}
-        {role === "sender" && (
-          <SenderPanel
-            roomCode={roomCode}
-            shareLink={shareLink}
-            peerPresent={peerPresent}
-            rtcState={rtcState}
-            selectedFile={selectedFile}
-            stats={transfer.stats}
-            error={combinedError}
-            onSelectFile={setSelectedFile}
-            onStartTransfer={handleStartTransfer}
-            onSendAnother={handleSendAnother}
-          />
-        )}
+          {/* Loading Indicator */}
+          {loading && !inRoom && (
+            <div className="flex flex-col items-center justify-center py-8 gap-4">
+              <div className="inline-block w-8 h-8 border-2 border-neutral-600 border-t-white rounded-full animate-spin" />
+              <div className="font-mono-label text-[11px] text-on-surface-variant uppercase tracking-wider">
+                Connecting to Room...
+              </div>
+            </div>
+          )}
 
-        {role === "receiver" && (
-          <ReceiverPanel
-            roomCode={roomCode}
-            peerPresent={peerPresent}
-            rtcState={rtcState}
-            incomingMeta={transfer.incomingMeta}
-            stats={transfer.stats}
-            downloadUrl={transfer.downloadUrl}
-            error={combinedError}
-            saveReady={transfer.saveReady}
-            onPromptSave={transfer.promptSaveLocation}
-          />
-        )}
+          {/* Error message if generic error outside panels */}
+          {appError && !inRoom && !loading && (
+            <div className="backdrop-blur-xl bg-error/5 border border-error/20 rounded-xl p-5 flex items-start gap-4 shadow-lg shadow-error/5">
+              <span className="material-symbols-outlined text-error text-[20px] mt-0.5">error</span>
+              <div>
+                <h4 className="font-body-md text-[14px] text-error font-medium mb-1">Error</h4>
+                <p className="font-body-sm text-[13px] text-error/70 leading-relaxed">{appError}</p>
+              </div>
+            </div>
+          )}
 
-        {loading && !inRoom && (
-          <div className="text-center text-neutral-500 text-sm py-8">
-            <div className="inline-block w-5 h-5 border-2 border-neutral-600 border-t-white rounded-full animate-spin mr-2 align-middle" />
-            Connecting…
-          </div>
-        )}
-      </div>
+          {/* Conditional View Rendering */}
+          {!inRoom && !loading ? (
+            <HomeScreen
+              onCreateRoom={handleCreateRoom}
+              onJoinRoom={handleJoinRoom}
+              initialCode={urlRoom}
+              initialRole={urlRole}
+              loading={loading}
+              error={appError}
+            />
+          ) : inRoom ? (
+            <div className="flex flex-col gap-6">
+              {/* Back / Cancel Button */}
+              <button
+                onClick={handleBackToHome}
+                className="text-on-surface-variant hover:text-on-surface font-mono-label text-[11px] uppercase tracking-wider flex items-center gap-2 mb-2 transition-colors self-start"
+              >
+                <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+                {role === "sender" ? "Back" : "Cancel"}
+              </button>
+
+              {role === "sender" && (
+                <SenderPanel
+                  roomCode={roomCode}
+                  shareLink={shareLink}
+                  peerPresent={peerPresent}
+                  rtcState={rtcState}
+                  selectedFile={selectedFile}
+                  stats={transfer.stats}
+                  error={combinedError}
+                  onSelectFile={setSelectedFile}
+                  onStartTransfer={handleStartTransfer}
+                  onSendAnother={handleSendAnother}
+                />
+              )}
+
+              {role === "receiver" && (
+                <ReceiverPanel
+                  roomCode={roomCode}
+                  peerPresent={peerPresent}
+                  rtcState={rtcState}
+                  incomingMeta={transfer.incomingMeta}
+                  stats={transfer.stats}
+                  downloadUrl={transfer.downloadUrl}
+                  error={combinedError}
+                  saveReady={transfer.saveReady}
+                  onPromptSave={transfer.promptSaveLocation}
+                />
+              )}
+            </div>
+          ) : null}
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="w-full max-w-container-max mx-auto px-gutter py-8 flex flex-col md:flex-row justify-between items-center gap-6 border-t border-white/10 relative z-10 opacity-70 hover:opacity-100 transition-opacity mt-auto">
+        <p className="font-mono-label text-[10px] text-on-surface-variant uppercase tracking-[0.15em]">
+          © 2026 P2P-Zip Protocol. End-to-end encrypted.
+        </p>
+        <div className="flex gap-6 font-mono-label text-[11px] uppercase tracking-wider">
+          <a className="text-on-surface-variant hover:text-on-surface transition-colors" href="#">
+            Documentation
+          </a>
+          <a className="text-on-surface-variant hover:text-on-surface transition-colors" href="#">
+            Privacy
+          </a>
+          <a className="text-on-surface-variant hover:text-on-surface transition-colors" href="https://github.com/nikfury27/P2P-Zip" target="_blank" rel="noopener noreferrer">
+            GitHub
+          </a>
+        </div>
+      </footer>
     </div>
   );
 }
