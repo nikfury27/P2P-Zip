@@ -187,21 +187,34 @@ export function useFileTransfer() {
 
     if ("showSaveFilePicker" in window) {
       try {
-        const pickerOpts: Record<string, unknown> = { suggestedName: meta.fileName };
+        const pickerOpts: Record<string, any> = { suggestedName: meta.fileName };
         // Only set types filter if we have a valid extension
         if (ext) {
           pickerOpts.types = [{ description: meta.fileName, accept: { [mimeType]: [ext] } }];
         }
-        const handle = await (window as unknown as {
-          showSaveFilePicker: (o: unknown) => Promise<FileSystemFileHandle>;
-        }).showSaveFilePicker(pickerOpts);
+        const handle = await (window as any).showSaveFilePicker(pickerOpts);
         const writable = await handle.createWritable();
         writableRef.current = writable;
         useStreamRef.current = true;
         streaming = true;
-      } catch {
-        // User cancelled — fall back to in-memory
-        useStreamRef.current = false;
+      } catch (err) {
+        if (err instanceof TypeError) {
+          // Fall back to no file-type filtering (retry picker)
+          try {
+            console.warn("[p2p-zip] Retry save picker without filter due to type error:", err);
+            const handle = await (window as any).showSaveFilePicker({ suggestedName: meta.fileName });
+            const writable = await handle.createWritable();
+            writableRef.current = writable;
+            useStreamRef.current = true;
+            streaming = true;
+          } catch (retryErr) {
+            console.error("[p2p-zip] Retry picker failed:", retryErr);
+            useStreamRef.current = false;
+          }
+        } else {
+          console.log("[p2p-zip] Picker cancelled or failed:", err);
+          useStreamRef.current = false;
+        }
       }
     }
 
@@ -281,8 +294,21 @@ export function useFileTransfer() {
                 const blobType = inMeta?.mimeType || "application/octet-stream";
                 const blob = new Blob(chunksRef.current as unknown as BlobPart[],
                   { type: blobType });
-                setDownloadUrl(URL.createObjectURL(blob));
+                const url = URL.createObjectURL(blob);
+                setDownloadUrl(url);
                 chunksRef.current = [];
+
+                // Automatically trigger download on completion
+                try {
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = inMeta?.fileName || "download.zip";
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                } catch (clickErr) {
+                  console.error("[p2p-zip] Auto-click download failed", clickErr);
+                }
               }
 
               setStats({ progress: 100, bytesTransferred: finalBytes,
