@@ -1,4 +1,5 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
+import confetti from "canvas-confetti";
 import type { RtcState, TransferStats, FileMeta } from "../types";
 import { StatusBadge } from "./StatusBadge";
 import { formatBytes, formatSpeed } from "../lib/constants";
@@ -7,6 +8,7 @@ interface ReceiverPanelProps {
   roomCode: string;
   peerPresent: boolean;
   rtcState: RtcState;
+  networkHealth?: "good" | "fair" | "poor" | null;
   incomingMeta: FileMeta | null;
   stats: TransferStats;
   downloadUrl: string | null;
@@ -19,6 +21,7 @@ export function ReceiverPanel({
   roomCode,
   peerPresent,
   rtcState,
+  networkHealth,
   incomingMeta,
   stats,
   downloadUrl,
@@ -28,6 +31,16 @@ export function ReceiverPanel({
 }: ReceiverPanelProps) {
   const [picking, setPicking] = useState(false);
   const [streamMode, setStreamMode] = useState(false);
+
+  useEffect(() => {
+    if (stats.completed) {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    }
+  }, [stats.completed]);
 
   const handleChooseSaveLocation = useCallback(async () => {
     if (!incomingMeta) return;
@@ -59,7 +72,20 @@ export function ReceiverPanel({
 
       {/* Connection status */}
       <div className="flex items-center justify-between">
-        <StatusBadge state={rtcState} />
+        <div className="flex items-center gap-4">
+          <StatusBadge state={rtcState} />
+          {networkHealth && (
+            <span className={`font-mono-label text-[10px] uppercase tracking-wider flex items-center gap-1.5 ${
+              networkHealth === 'good' ? 'text-emerald-400' : 
+              networkHealth === 'fair' ? 'text-yellow-400' : 'text-error'
+            }`}>
+              <span className="material-symbols-outlined text-[14px]">
+                {networkHealth === 'good' ? 'wifi' : networkHealth === 'fair' ? 'wifi_1_bar' : 'wifi_tethering_error'}
+              </span>
+              {networkHealth} Connection
+            </span>
+          )}
+        </div>
         <span className="font-mono-label text-[11px] text-on-surface-variant uppercase tracking-wider">
           {peerPresent ? "Sender connected" : "Waiting for sender…"}
         </span>

@@ -99,9 +99,19 @@ export function useFileTransfer() {
       dc.addEventListener("message", listener);
     });
 
-    const waitForDrain = (): Promise<void> => new Promise((resolve) => {
+    const waitForDrain = (): Promise<void> => new Promise((resolve, reject) => {
       if (dc.bufferedAmount <= BUFFERED_AMOUNT_LOW_THRESHOLD) { resolve(); return; }
-      const onLow = () => { dc.removeEventListener("bufferedamountlow", onLow); resolve(); };
+      
+      const timeout = setTimeout(() => {
+        dc.removeEventListener("bufferedamountlow", onLow);
+        reject(new Error("Connection stalled: Transfer buffer did not drain within 30 seconds."));
+      }, 30000);
+
+      const onLow = () => { 
+        clearTimeout(timeout);
+        dc.removeEventListener("bufferedamountlow", onLow); 
+        resolve(); 
+      };
       dc.addEventListener("bufferedamountlow", onLow);
     });
 

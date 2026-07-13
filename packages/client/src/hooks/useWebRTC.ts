@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 import type { Role, RtcState } from "../types";
 import { RTC_CONFIG } from "../lib/constants";
 
@@ -14,6 +14,7 @@ export function useWebRTC({ role, roomCode, sendSignal, onDataChannel }: UseWebR
   const dcRef = useRef<RTCDataChannel | null>(null);
   const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
   const [rtcState, setRtcState] = useState<RtcState>("idle");
+  const [networkHealth, setNetworkHealth] = useState<"good" | "fair" | "poor" | null>(null);
 
   const targetRole: Role = role === "sender" ? "receiver" : "sender";
 
@@ -153,9 +154,40 @@ export function useWebRTC({ role, roomCode, sendSignal, onDataChannel }: UseWebR
     [handleOffer, handleAnswer, handleIceCandidate]
   );
 
+  useEffect(() => {
+    if (rtcState !== "connected") {
+      setNetworkHealth(null);
+      return;
+    }
+
+    const interval = setInterval(async () => {
+      const pc = pcRef.current;
+      if (!pc) return;
+      try {
+        const stats = await pc.getStats();
+        let rtt = 0;
+        stats.forEach((report) => {
+          if (report.type === "candidate-pair" && report.state === "succeeded") {
+            rtt = report.currentRoundTripTime || 0;
+          }
+        });
+        if (rtt > 0) {
+          if (rtt > 0.5) setNetworkHealth("poor"); // > 500ms
+          else if (rtt > 0.15) setNetworkHealth("fair"); // > 150ms
+          else setNetworkHealth("good");
+        }
+      } catch {
+        // ignore stats errors
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [rtcState]);
+
   return {
     rtcState,
     setRtcState,
+    networkHealth,
     startAsOfferer,
     handleSignal,
     cleanup,

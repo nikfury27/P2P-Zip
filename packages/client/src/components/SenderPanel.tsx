@@ -1,4 +1,5 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
+import confetti from "canvas-confetti";
 import type { RtcState, TransferStats } from "../types";
 import { StatusBadge } from "./StatusBadge";
 import { formatBytes, formatSpeed, MAX_FILE_SIZE } from "../lib/constants";
@@ -8,6 +9,7 @@ interface SenderPanelProps {
   shareLink: string;
   peerPresent: boolean;
   rtcState: RtcState;
+  networkHealth?: "good" | "fair" | "poor" | null;
   selectedFile: File | null;
   stats: TransferStats;
   error: string | null;
@@ -31,6 +33,7 @@ export function SenderPanel({
   shareLink,
   peerPresent,
   rtcState,
+  networkHealth,
   selectedFile,
   stats,
   error,
@@ -39,6 +42,18 @@ export function SenderPanel({
   onSendAnother,
 }: SenderPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (stats.completed) {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    }
+  }, [stats.completed]);
+
+
 
   const handleCopy = async (text: string) => {
     try {
@@ -109,7 +124,20 @@ export function SenderPanel({
 
       {/* Connection status */}
       <div className="flex items-center justify-between">
-        <StatusBadge state={rtcState} />
+        <div className="flex items-center gap-4">
+          <StatusBadge state={rtcState} />
+          {networkHealth && (
+            <span className={`font-mono-label text-[10px] uppercase tracking-wider flex items-center gap-1.5 ${
+              networkHealth === 'good' ? 'text-emerald-400' : 
+              networkHealth === 'fair' ? 'text-yellow-400' : 'text-error'
+            }`}>
+              <span className="material-symbols-outlined text-[14px]">
+                {networkHealth === 'good' ? 'wifi' : networkHealth === 'fair' ? 'wifi_1_bar' : 'wifi_tethering_error'}
+              </span>
+              {networkHealth} Connection
+            </span>
+          )}
+        </div>
         <span className="font-mono-label text-[11px] text-on-surface-variant uppercase tracking-wider">
           {peerPresent ? "Receiver connected" : "Waiting for receiver…"}
         </span>

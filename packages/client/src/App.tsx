@@ -325,6 +325,7 @@ export default function App() {
                   shareLink={shareLink}
                   peerPresent={peerPresent}
                   rtcState={rtcState}
+                  networkHealth={rtc.networkHealth}
                   selectedFile={selectedFile}
                   stats={transfer.stats}
                   error={combinedError}
@@ -339,6 +340,7 @@ export default function App() {
                   roomCode={roomCode}
                   peerPresent={peerPresent}
                   rtcState={rtcState}
+                  networkHealth={rtc.networkHealth}
                   incomingMeta={transfer.incomingMeta}
                   stats={transfer.stats}
                   downloadUrl={transfer.downloadUrl}
