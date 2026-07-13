@@ -259,7 +259,7 @@ export function SenderPanel({
                 <span className="font-body-md font-semibold">Transfer complete!</span>
               </div>
               <p className="font-body-sm text-[13px] text-on-surface-variant">
-                The receiver has successfully saved the zip file.
+                The receiver has successfully saved the file.
               </p>
               <button
                 onClick={() => {

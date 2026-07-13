@@ -366,7 +366,7 @@ export default function App() {
           <a className="text-on-surface-variant hover:text-on-surface transition-colors" href="#">
             Privacy
           </a>
-          <a className="text-on-surface-variant hover:text-on-surface transition-colors" href="https://github.com/nikfury27/P2P-Zip" target="_blank" rel="noopener noreferrer">
+          <a className="text-on-surface-variant hover:text-on-surface transition-colors" href="https://github.com/Termi007xt/P2P-Zip" target="_blank" rel="noopener noreferrer">
             GitHub
           </a>
         </div>

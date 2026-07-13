@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Role } from "../types";
+import { formatBytes, MAX_FILE_SIZE } from "../lib/constants";
 
 interface HomeScreenProps {
   onCreateRoom: () => void;
@@ -45,7 +46,7 @@ export function HomeScreen({
             {loading ? "Creating Room..." : "Send a File"}
           </h2>
           <p className="font-body-md text-body-md text-on-surface-variant leading-relaxed">
-            Generate a secure room code to share files directly from your browser. No size limits.
+            Generate a secure room code to share files directly from your browser (max {formatBytes(MAX_FILE_SIZE)}).
           </p>
         </div>
       </button>
